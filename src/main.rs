@@ -9,7 +9,10 @@ use axum::{
 use chrono::Local;
 use futures::{Stream, TryStreamExt};
 use std::io;
-use tokio::{fs::File, io::BufWriter};
+use tokio::{
+    fs::File,
+    io::{BufReader, BufWriter},
+};
 use tokio_util::io::StreamReader;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -82,12 +85,25 @@ where
         let filename = path;
 
         // Create the file. `File` implements `AsyncWrite`.
-        let path = std::path::Path::new(UPLOADS_DIRECTORY).join(path);
-        let mut file = BufWriter::new(File::create(path).await?);
+        let path_buf = std::path::Path::new(UPLOADS_DIRECTORY).join(path);
+        let mut file = BufWriter::new(File::create(path_buf).await?);
 
         // Copy the body into the file.
         tokio::io::copy(&mut body_reader, &mut file).await?;
-        tracing::debug!("image saved to file: {}", filename);
+
+        // Read the file just copied
+        let path_buf = std::path::Path::new(UPLOADS_DIRECTORY).join(path);
+        let mut image_file = BufReader::new(File::open(path_buf).await?);
+
+        let filename_latest = "aaa-latest.jpg";
+
+        // Create the file. `File` implements `AsyncWrite`.
+        let path_latest = std::path::Path::new(UPLOADS_DIRECTORY).join(filename_latest);
+        let mut file_latest = BufWriter::new(File::create(path_latest).await?);
+
+        // Copy the image file into the latest file.
+        tokio::io::copy(&mut image_file, &mut file_latest).await?;
+        tracing::debug!("image saved to file: {} and {}", filename, filename_latest);
 
         Ok::<_, io::Error>(())
     }
