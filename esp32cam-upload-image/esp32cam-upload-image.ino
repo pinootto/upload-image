@@ -15,15 +15,18 @@
 #include "soc/rtc_cntl_reg.h"
 #include "esp_camera.h"
 
-const char* ssid = "xxxxx";
-const char* password = "yyyyyy";
+const char* ssid = "xxxx";
+const char* password = "xxxx";
 
-// String serverName = "192.161.0.10";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
-String serverName = "example.com";   // OR REPLACE WITH YOUR DOMAIN NAME
+String serverName = "192.161.0.10";   // REPLACE WITH YOUR Raspberry Pi IP ADDRESS
 
 String serverPath = "/upload";     // The default serverPath should be upload.php
 
-const int serverPort = 3000;
+// const int serverPort = 3000;
+// const int serverPort = 23000;
+const int serverPort = 80;
+
+String serial_number;
 
 WiFiClient client;
 
@@ -46,12 +49,19 @@ WiFiClient client;
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
-const int timerInterval = 30000;    // time between each HTTP POST image
+const int timerInterval = 5000;    // time between each HTTP POST image
 unsigned long previousMillis = 0;   // last time image was sent
 
 void setup() {
   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); 
   Serial.begin(115200);
+
+  char mac[14];
+  snprintf(mac, 14, "%llX", ESP.getEfuseMac());
+  serial_number = mac ; // convert from char to String
+  Serial.println("serial number = " + serial_number);
+  int StrLen = serial_number.length();
+  Serial.printf("Length of the serial_number: %i characters \r\n",StrLen);
 
   WiFi.mode(WIFI_STA);
   Serial.println();
@@ -134,13 +144,24 @@ String sendPhoto() {
 
   if (client.connect(serverName.c_str(), serverPort)) {
     Serial.println("Connection successful!");    
+    // String head = "--RandomNerdTutorials\r\nContent-Disposition: form-data; name=\"imageFile\"; filename=\"esp32-cam.jpg\"\r\nContent-Type: image/jpeg\r\n\r\n";
+    // String tail = "\r\n--RandomNerdTutorials--\r\n";
+
     uint32_t imageLen = fb->len;
+    // uint32_t extraLen = head.length() + tail.length();
+    // uint32_t totalLen = imageLen + extraLen;
+
+    String path = serverPath + "/" + serial_number;
+    Serial.println("path = " + path);
   
-    client.println("POST " + serverPath + " HTTP/1.1");
+    client.println("POST " + path + " HTTP/1.1");
     client.println("Host: " + serverName);
+    // client.println("Content-Length: " + String(totalLen));
     client.println("Content-Length: " + String(imageLen));
     client.println("Content-Type: image/jpeg");
+    // client.println("Content-Type: multipart/form-data; boundary=RandomNerdTutorials");
     client.println();
+    // client.print(head);
  
     uint8_t *fbBuf = fb->buf;
     size_t fbLen = fb->len;
@@ -153,10 +174,11 @@ String sendPhoto() {
         client.write(fbBuf, remainder);
       }
     }   
+    // client.print(tail);
     
     esp_camera_fb_return(fb);
     
-    int timoutTimer = 30000;
+    int timoutTimer = 10000;
     long startTimer = millis();
     boolean state = false;
     
