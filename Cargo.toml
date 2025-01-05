@@ -4,11 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.7.9", features = ["multipart"] }
+axum = { version = "0.7.9", features = ["multipart", "ws"] }
+axum-extra = { version = "0.7.9", features = ["typed-header"] }
 chrono = "0.4.39"
 futures = "0.3"
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+headers = "0.4"
 tokio = { version = "1.0", features = ["full"] }
 tokio-util = { version = "0.7", features = ["io"] }
+tokio-tungstenite = "0.23"
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5.0", features = ["fs", "trace"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-tower-http = { version = "0.5.0", features = ["fs", "trace"] }
