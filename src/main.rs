@@ -114,7 +114,12 @@ where
 
         // Copy the image file into the latest file.
         tokio::io::copy(&mut image_file, &mut file_latest).await?;
-        tracing::debug!("image saved to file: {} and {}", filename, filename_latest);
+        tracing::debug!(
+            "image saved to {}: {} and {}",
+            serial_number,
+            filename,
+            filename_latest
+        );
 
         Ok::<_, io::Error>(())
     }
