@@ -218,6 +218,7 @@ fn process_message(msg: Message, who: SocketAddr) -> ControlFlow<(), ()> {
         Message::Binary(d) => {
             println!(">>> {} sent {} bytes: {:?}", who, d.len(), d);
             // to do
+            // save the image to disk
         }
         Message::Close(c) => {
             if let Some(cf) = c {
