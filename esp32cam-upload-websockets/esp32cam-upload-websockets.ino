@@ -22,7 +22,7 @@ const char* password = "china123";
 
 const char* websockets_server_host = "192.168.0.10"; //CHANGE HERE
 // const char* websockets_server_host = "45.32.115.191"; //CHANGE HERE
-const uint16_t websockets_server_port = 3002; // OPTIONAL CHANGE
+const uint16_t websockets_server_port = 3003; // OPTIONAL CHANGE
 
 String serial_number;
 
@@ -84,7 +84,7 @@ void setup() {
 
   Serial.println("connecting to WS...");
   client.onMessage(onMessageCallback);
-  bool connected = client.connect(websockets_server_host, websockets_server_port, "/");
+  bool connected = client.connect(websockets_server_host, websockets_server_port, "/ws");
   if (!connected) {
     Serial.println("WS connect failed!");
     Serial.println(WiFi.localIP());

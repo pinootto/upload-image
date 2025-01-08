@@ -65,9 +65,7 @@ async fn main() {
         );
 
     // run it with hyper
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3003")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3003").await.unwrap();
     tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(
         listener,
@@ -217,6 +215,7 @@ fn process_message(msg: Message, who: SocketAddr) -> ControlFlow<(), ()> {
         }
         Message::Binary(d) => {
             println!(">>> {} sent {} bytes: {:?}", who, d.len(), d);
+            println!("going to save received image to file");
             // to do
             // save the image to disk
         }
