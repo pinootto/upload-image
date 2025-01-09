@@ -24,9 +24,14 @@ use axum::{
 };
 use axum_extra::TypedHeader;
 
+use chrono::Local;
 use std::borrow::Cow;
 use std::ops::ControlFlow;
 use std::{net::SocketAddr, path::PathBuf};
+use tokio::{
+    fs::File,
+    io::{BufReader, BufWriter},
+};
 use tower_http::{
     services::ServeDir,
     trace::{DefaultMakeSpan, TraceLayer},
@@ -40,6 +45,8 @@ use axum::extract::ws::CloseFrame;
 
 //allows to split the websocket stream into separate TX and RX branches
 use futures::{sink::SinkExt, stream::StreamExt};
+
+const UPLOADS_DIRECTORY: &str = "uploads-websocket";
 
 #[tokio::main]
 async fn main() {
@@ -242,4 +249,42 @@ fn process_message(msg: Message, who: SocketAddr) -> ControlFlow<(), ()> {
         }
     }
     ControlFlow::Continue(())
+}
+
+async fn save_image(serial_number: &str) -> Result<(), String> {
+    let local_time = Local::now().format("%Y%m%d-%H%M%S");
+    let filename = format!("image-{}.jpg", local_time);
+
+    tokio::fs::create_dir_all(format!("{}/{}", UPLOADS_DIRECTORY, serial_number))
+        .await
+        .expect("failed to create `uploads/<serial_number>` directory");
+
+    let path = format!("{}/{}", serial_number, filename);
+
+    // Create the file. `File` implements `AsyncWrite`.
+    let path_buf = std::path::Path::new(UPLOADS_DIRECTORY).join(&path);
+    let mut file = BufWriter::new(File::create(path_buf).await?);
+
+    // Copy the body into the file.
+    tokio::io::copy(&mut body_reader, &mut file).await?;
+
+    // Read the file just copied
+    let path_buf = std::path::Path::new(UPLOADS_DIRECTORY).join(&path);
+    let mut image_file = BufReader::new(File::open(path_buf).await?);
+
+    let filename_latest = "aaa-latest.jpg";
+    let path_latest = format!("{}/{}", serial_number, filename_latest);
+
+    // Create the file. `File` implements `AsyncWrite`.
+    let path_latest_buf = std::path::Path::new(UPLOADS_DIRECTORY).join(&path_latest);
+    let mut file_latest = BufWriter::new(File::create(path_latest_buf).await?);
+
+    // Copy the image file into the latest file.
+    tokio::io::copy(&mut image_file, &mut file_latest).await?;
+    tracing::debug!(
+        "image saved to {}: {} and {}",
+        serial_number,
+        filename,
+        filename_latest
+    );
 }
