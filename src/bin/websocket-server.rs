@@ -125,6 +125,7 @@ async fn handle_socket(mut socket: WebSocket, who: SocketAddr) {
             } else {
                 if let Some(text) = message.continue_value() {
                     serial_number = text.clone();
+                    println!("received serial_number = {}", serial_number);
                 }
             }
         } else {
