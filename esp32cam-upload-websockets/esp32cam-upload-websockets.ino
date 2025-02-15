@@ -146,6 +146,7 @@ void loop() {
       delay(1000);
       ESP.restart();
     }
+    client.send(serial_number);
     client.sendBinary((const char*) fb->buf, fb->len);
     Serial.println("image sent");
     esp_camera_fb_return(fb);
